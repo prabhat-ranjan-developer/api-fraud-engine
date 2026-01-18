@@ -1,0 +1,88 @@
+services:
+  app:
+    build: .
+    container_name: fraud-engine-app
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - DB_HOST=postgres
+      - DB_USER=admin
+      - DB_PASSWORD=secret
+      - DB_NAME=fraud_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  redis:
+    image: redis:alpine
+    container_name: fraud-engine-redis
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: fraud-engine-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: fraud_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d fraud_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  Prometheus:
+    image: prom/prometheus:latest
+    container_name: fraud-engine-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  Grafana:
+    image: grafana/grafana:latest
+    container_name: fraud-engine-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - Prometheus
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: fraud-engine-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+
+  Kafka:
+    image: confluentinc/cp-kafka:7.4.0  # Lock version to 7.4.0 (Stable Zookeeper support)
+    container_name: fraud-engine-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Listeners config: Internal for Docker (9092), External for Host (29092)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # Explicitly disable KRaft (Just in case)
+      KAFKA_Process_Roles: ""
+      KAFKA_NODE_ID: 1

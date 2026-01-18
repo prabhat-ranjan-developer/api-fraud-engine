@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s # How often to check for new data
+
+scrape_configs:
+  - job_name: 'fraud-engine'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['app:8080'] # 'app' is the docker container name defined below

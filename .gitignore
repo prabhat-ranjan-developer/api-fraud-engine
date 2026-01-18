@@ -1,0 +1,61 @@
+# --- Go ---
+# Binaries/Executables
+# (Modify this if your binary has a specific name)
+main
+app
+fraud-engine
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+coverage.txt
+profile.out
+
+# Vendor directory (Only if you are NOT checking dependencies into git)
+vendor/
+
+# --- IDEs & Editors ---
+# IntelliJ / GoLand
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# --- OS Specific ---
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Infrastructure & Secrets ---
+# Environment variables (CRITICAL: Never commit secrets)
+.env
+.env.local
+
+# Docker
+docker-compose.override.yml
+
+# Terraform (If you use it later)
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# --- Project Specific ---
+# K6 Load testing output
+scripts/summary.json
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
