@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: bitnami/kafka:3.7
+        image: bitnami/kafka:3.7  # <--- Change this to a specific version number
         env:
         - name: KAFKA_CFG_NODE_ID
           value: "0"
