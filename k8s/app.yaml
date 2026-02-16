@@ -32,7 +32,7 @@ spec:
       containers:
       - name: fraud-engine
         # The pipeline will update this tag automatically
-        image: ranjpdocker/fraud-engine:7658f93
+        image: ranjpdocker/fraud-engine:2df463b
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
