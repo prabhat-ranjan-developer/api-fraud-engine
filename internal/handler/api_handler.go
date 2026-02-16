@@ -26,7 +26,7 @@ func NewHandler(s *service.FraudService) *Handler {
 // @Param        transaction  body      domain.TransactionRequest  true  "Transaction Data"
 // @Success      200          {object}  domain.FraudCheckResponse
 // @Failure      400          {object}  map[string]string "Invalid input"
-// @Router       /fraud/check [post]
+// @Router       /v1/fraud/check [post]
 func (h *Handler) CheckFraudV1(c *gin.Context) {
 	var req domain.TransactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,7 +49,7 @@ func (h *Handler) CheckFraudV1(c *gin.Context) {
 // @Produce      json
 // @Param        transaction  body      domain.TransactionRequest  true  "Transaction Data"
 // @Success      200          {object}  domain.FraudCheckResponse
-// @Router       /api/v2/fraud/check [post]
+// @Router       /v2/fraud/check [post]
 func (h *Handler) CheckFraudV2(c *gin.Context) {
 	// ... existing implementation ...
 	var req domain.TransactionRequest
@@ -69,7 +69,7 @@ func (h *Handler) CheckFraudV2(c *gin.Context) {
 // @Produce      json
 // @Param        request  body      map[string]string  true  "e.g. {'list_type': 'user_id', 'value': 'user123'}"
 // @Success      200      {object}  map[string]string  "Message: Success"
-// @Router       /rules/blacklist [post]
+// @Router       /v1/rules/blacklist [post]
 func (h *Handler) AddBlacklistRule(c *gin.Context) {
 	// ... existing implementation ...
 	var req domain.RuleRequest
