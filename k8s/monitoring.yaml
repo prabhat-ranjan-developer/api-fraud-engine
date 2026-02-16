@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fraud-engine-monitor
+  namespace: monitoring # Prometheus lives here
+  labels:
+    release: prometheus-stack # Connects to the Prometheus Operator
+spec:
+  selector:
+    matchLabels:
+      app: fraud-engine
+  namespaceSelector:
+    matchNames:
+    - fraud-engine
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
