@@ -21,7 +21,13 @@ import (
 
 func main() {
 	// 1. Setup Postgres
-	dsn := "host=" + os.Getenv("DB_HOST") + " user=" + os.Getenv("DB_USER") + " password=" + os.Getenv("DB_PASSWORD") + " dbname=" + os.Getenv("DB_NAME") + " port=5432 sslmode=disable"
+	dsn := os.Getenv("DB_DSN") 
+    
+    // Fallback for local testing if DB_DSN is empty
+    if dsn == "" {
+        dsn = "host=" + os.Getenv("DB_HOST") + " user=" + os.Getenv("DB_USER") + " password=" + os.Getenv("DB_PASSWORD") + " dbname=" + os.Getenv("DB_NAME") + " port=5432 sslmode=disable"
+    }
+	
 	var db *gorm.DB
 	var err error
 
