@@ -19,6 +19,14 @@ import (
 	"gorm.io/gorm"
 )
 
+
+// @title           Fraud Engine API
+// @version         1.0
+// @description     Real-time fraud detection service with Redis, Kafka, and Postgres.
+// @contact.name    Prabhat Ranjan
+
+// @accept  json
+// @produce  json
 func main() {
 	// 1. Setup Postgres
 	dsn := os.Getenv("DB_DSN") 

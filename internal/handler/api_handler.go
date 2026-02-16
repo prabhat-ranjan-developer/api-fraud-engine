@@ -17,7 +17,16 @@ func NewHandler(s *service.FraudService) *Handler {
 }
 
 // CheckFraudV1, CheckFraudV2, AddBlacklistRule ... (Keep existing methods) ...
-
+// CheckFraudV1 godoc
+// @Summary      Check transaction (V1)
+// @Description  Basic fraud check using Blacklist (Redis) and Velocity limits.
+// @Tags         fraud
+// @Accept       json
+// @Produce      json
+// @Param        transaction  body      domain.TransactionRequest  true  "Transaction Data"
+// @Success      200          {object}  domain.FraudCheckResponse
+// @Failure      400          {object}  map[string]string "Invalid input"
+// @Router       /fraud/check [post]
 func (h *Handler) CheckFraudV1(c *gin.Context) {
 	var req domain.TransactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,6 +41,15 @@ func (h *Handler) CheckFraudV1(c *gin.Context) {
 	c.JSON(httpCode, result)
 }
 
+// CheckFraudV2 godoc
+// @Summary      Check transaction (V2)
+// @Description  Advanced fraud check returning a Risk Score (AI simulation).
+// @Tags         fraud
+// @Accept       json
+// @Produce      json
+// @Param        transaction  body      domain.TransactionRequest  true  "Transaction Data"
+// @Success      200          {object}  domain.FraudCheckResponse
+// @Router       /api/v2/fraud/check [post]
 func (h *Handler) CheckFraudV2(c *gin.Context) {
 	// ... existing implementation ...
 	var req domain.TransactionRequest
@@ -43,6 +61,15 @@ func (h *Handler) CheckFraudV2(c *gin.Context) {
 	c.JSON(http.StatusAccepted, result)
 }
 
+// AddBlacklistRule godoc
+// @Summary      Blacklist a User or IP
+// @Description  Adds an entity to the Redis blacklist to block future transactions.
+// @Tags         rules
+// @Accept       json
+// @Produce      json
+// @Param        request  body      map[string]string  true  "e.g. {'list_type': 'user_id', 'value': 'user123'}"
+// @Success      200      {object}  map[string]string  "Message: Success"
+// @Router       /rules/blacklist [post]
 func (h *Handler) AddBlacklistRule(c *gin.Context) {
 	// ... existing implementation ...
 	var req domain.RuleRequest
