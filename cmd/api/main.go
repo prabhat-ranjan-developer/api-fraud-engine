@@ -19,22 +19,18 @@ import (
 	"gorm.io/gorm"
 )
 
-
 // @title           Fraud Engine API
 // @version         1.0
-// @description     Real-time fraud detection service with Redis, Kafka, and Postgres.
+// @description     Real-time fraud detection service with Redis and Postgres.
 // @contact.name    Prabhat Ranjan
-
-// @accept  json
-// @produce  json
+// @accept          json
+// @produce         json
 func main() {
 	// 1. Setup Postgres
 	dsn := os.Getenv("DB_DSN") 
-    
-    // Fallback for local testing if DB_DSN is empty
-    if dsn == "" {
-        dsn = "host=" + os.Getenv("DB_HOST") + " user=" + os.Getenv("DB_USER") + " password=" + os.Getenv("DB_PASSWORD") + " dbname=" + os.Getenv("DB_NAME") + " port=5432 sslmode=disable"
-    }
+	if dsn == "" {
+		dsn = "host=" + os.Getenv("DB_HOST") + " user=" + os.Getenv("DB_USER") + " password=" + os.Getenv("DB_PASSWORD") + " dbname=" + os.Getenv("DB_NAME") + " port=5432 sslmode=disable"
+	}
 	
 	var db *gorm.DB
 	var err error
@@ -56,36 +52,40 @@ func main() {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR"),
 	})
+	
+	// Verify Redis connection
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatal("Failed to connect to Redis:", err)
+	}
+	
 	redisRepo := repository.NewRedisRepository(rdb)
 
-	// 3. Setup Kafka Producer
-	kafkaHost := os.Getenv("KAFKA_ADDR")
-	if kafkaHost == "" {
-		kafkaHost = "kafka:9092"
-	}
-	// Topic: "fraud_alerts"
-	producer := repository.NewEventProducer(kafkaHost, "fraud_alerts")
-	defer producer.Close()
+	// 3. Setup Redis Event Broker (Replacing Kafka)
+	// This uses Redis Pub/Sub for messaging
+	broker := repository.NewEventBroker(rdb) 
 
-	// 4. Setup Service (Injects Repo, Redis, and Producer)
-	svc := service.NewFraudService(repo, redisRepo, producer)
+	// 4. Setup Service (Injecting Repo, Redis, and Redis-based Broker)
+	svc := service.NewFraudService(repo, redisRepo, broker)
 	h := handler.NewHandler(svc)
 
-	// 5. Setup Kafka Consumer (For the Dashboard Stream)
-	// Channel Buffer 100 to prevent blocking
+	// 5. Setup Event Stream (For the Dashboard)
 	alertChannel := make(chan string, 100)
 
-	// Start Consumer in background
-	consumer := repository.NewEventConsumer(kafkaHost, "fraud_alerts")
-	defer consumer.Close()
-
-	// Important: Run in goroutine so it doesn't block server start
-	go consumer.Subscribe(context.Background(), alertChannel)
+	// Start Redis Subscription in background
+	go func() {
+		pubsub := rdb.Subscribe(context.Background(), "fraud_alerts")
+		defer pubsub.Close()
+		
+		ch := pubsub.Channel()
+		log.Println("Subscribed to Redis channel: fraud_alerts")
+		for msg := range ch {
+			alertChannel <- msg.Payload
+		}
+	}()
 
 	// 6. Router Setup
 	r := gin.Default()
 
-	// Prometheus
 	p := ginprometheus.NewPrometheus("gin")
 	p.Use(r)
 
@@ -97,8 +97,6 @@ func main() {
 	{
 		v1.POST("/fraud/check", h.CheckFraudV1)
 		v1.POST("/rules/blacklist", h.AddBlacklistRule)
-
-		// NEW: Subscribe to Kafka Alerts
 		v1.GET("/events/stream", h.StreamFraudAlerts(alertChannel))
 	}
 
@@ -110,6 +108,6 @@ func main() {
 	log.Println("Fraud Engine running on port 8080 (Internal) / 8081 (External)")
 	err = r.Run(":8080")
 	if err != nil {
-		return
-	} // Internal Docker Port
+		log.Fatal(err)
+	}
 }

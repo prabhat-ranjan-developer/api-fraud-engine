@@ -41,5 +41,3 @@ spec:
           value: "redis:6379"
         - name: DB_DSN
           value: "postgres://admin:admin123@postgres:5432/fraud_db?sslmode=disable"
-        - name: KAFKA_BROKER
-          value: "kafka:9092"

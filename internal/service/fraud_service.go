@@ -3,22 +3,21 @@ package service
 import (
 	"context"
 	"fraud-engine/internal/domain"
-	"fraud-engine/internal/repository"
+	"fraud-engine/internal/repository" // Ensure this path is correct
 	"time"
 )
 
 type FraudService struct {
 	Repo     *repository.PostgresRepository
 	Redis    *repository.RedisRepository
-	Producer *repository.EventProducer // <--- Added
+	Broker   *repository.EventBroker // <--- Changed from Producer to Broker
 }
 
-// NewFraudService Updated Constructor
-func NewFraudService(repo *repository.PostgresRepository, redis *repository.RedisRepository, producer *repository.EventProducer) *FraudService {
+func NewFraudService(repo *repository.PostgresRepository, redis *repository.RedisRepository, broker *repository.EventBroker) *FraudService {
 	return &FraudService{
-		Repo:     repo,
-		Redis:    redis,
-		Producer: producer,
+		Repo:   repo,
+		Redis:  redis,
+		Broker: broker,
 	}
 }
 
@@ -26,8 +25,8 @@ func (s *FraudService) CheckFraudV1(ctx context.Context, req domain.TransactionR
 	// 1. Blacklist Check
 	isBlacklisted, _ := s.Redis.IsBlacklisted(ctx, req.UserID, req.IPAddress)
 	if isBlacklisted {
-		// FIX: Use context.Background() here
-		go s.Producer.PublishFraudAlert(context.Background(), req.TransactionID, "Blacklisted Entity", req)
+		// Publish to Redis instead of Kafka
+		go s.Broker.PublishFraudAlert(context.Background(), "fraud_alerts", "Blacklisted Entity: "+req.UserID)
 
 		s.logFraud(req, "BLOCK", "User/IP is blacklisted", "v1")
 		return domain.FraudCheckResponse{
@@ -40,18 +39,15 @@ func (s *FraudService) CheckFraudV1(ctx context.Context, req domain.TransactionR
 	// 2. Velocity Check
 	count, _ := s.Redis.IncrementVelocity(ctx, req.UserID, 60*time.Second)
 	if count > 5 {
-		// FIX: Use context.Background() here
-		go s.Producer.PublishFraudAlert(context.Background(), req.TransactionID, "Velocity Limit Exceeded", req)
+		go s.Broker.PublishFraudAlert(context.Background(), "fraud_alerts", "Velocity Limit Exceeded: "+req.UserID)
 
-		s.logFraud(req, "BLOCK", "Velocity limit exceeded (>5 txns/min)", "v1")
+		s.logFraud(req, "BLOCK", "Velocity limit exceeded", "v1")
 		return domain.FraudCheckResponse{
 			TransactionID: req.TransactionID,
 			Status:        "BLOCK",
 			Reason:        "Velocity limit exceeded",
 		}
 	}
-
-	// 3. Allow
 	s.logFraud(req, "ALLOW", "Clean", "v1")
 	return domain.FraudCheckResponse{
 		TransactionID: req.TransactionID,
