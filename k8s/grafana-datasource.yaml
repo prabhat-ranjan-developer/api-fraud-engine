@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-redis-datasource
+  namespace: monitoring # Must be deployed in Grafana's namespace
+  labels:
+    grafana_datasource: "1" # This label tells Grafana to ingest this file
+spec:
+  data:
+    redis-datasource.yaml: |-
+      apiVersion: 1
+      datasources:
+        - name: Redis-Fraud
+          type: redis-datasource
+          url: redis.fraud-engine.svc.cluster.local:6379
+          access: proxy
+          isDefault: false
+          jsonData:
+            client: standalone
+            pingInterval: 60

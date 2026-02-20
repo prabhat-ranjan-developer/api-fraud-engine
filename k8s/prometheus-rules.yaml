@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fraud-engine-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus-stack # Must match your Helm release name for kube-prometheus-stack
+spec:
+  groups:
+  - name: fraud-engine.rules
+    rules:
+    - alert: HighErrorRate
+      expr: sum(rate(gin_requests_total{code=~"5.."}[2m])) / sum(rate(gin_requests_total[2m])) > 0.05
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High 5xx Error Rate on Fraud Engine"
+    - alert: HighLatency
+      expr: histogram_quantile(0.99, sum(rate(gin_request_duration_seconds_bucket[5m])) by (le)) > 1.0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "P99 Latency is > 1 second"
