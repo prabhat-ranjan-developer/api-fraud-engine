@@ -4,57 +4,56 @@ metadata:
   name: fraud-engine-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1" # This label tells Grafana to ingest this dashboard
-spec:
-  data:
-    fraud-engine-dashboard.json: |-
-      {
-        "title": "Fraud Engine Live Dashboard",
-        "refresh": "5s",
-        "panels": [
-          {
-            "title": "API Requests per Second",
-            "type": "timeseries",
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-            "targets": [
-              {
-                "expr": "sum(rate(gin_requests_total[1m])) by (code)",
-                "legendFormat": "HTTP {{code}}",
-                "refId": "A"
-              }
-            ]
-          },
-          {
-            "title": "P99 Latency (Seconds)",
-            "type": "timeseries",
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(gin_request_duration_seconds_bucket[5m])) by (le))",
-                "legendFormat": "P99 Latency",
-                "refId": "A"
-              }
-            ]
-          },
-          {
-            "title": "🚨 Live Fraud Alerts (Redis Stream)",
-            "type": "logs",
-            "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
-            "datasource": "Redis-Fraud",
-            "targets": [
-              {
-                "command": "subscribe",
-                "key": "fraud_alerts",
-                "queryType": "command",
-                "refId": "A",
-                "type": "streaming"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "showLabels": false,
-              "wrapLogMessage": true
+    grafana_dashboard: "1"
+data: # <--- Fixed: Removed "spec:" and placed "data:" at the root level
+  fraud-engine-dashboard.json: |-
+    {
+      "title": "Fraud Engine Live Dashboard",
+      "refresh": "5s",
+      "panels": [
+        {
+          "title": "API Requests per Second",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(rate(gin_requests_total[1m])) by (code)",
+              "legendFormat": "HTTP {{code}}",
+              "refId": "A"
             }
+          ]
+        },
+        {
+          "title": "P99 Latency (Seconds)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(gin_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "P99 Latency",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "🚨 Live Fraud Alerts (Redis Stream)",
+          "type": "logs",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+          "datasource": "Redis-Fraud",
+          "targets": [
+            {
+              "command": "subscribe",
+              "key": "fraud_alerts",
+              "queryType": "command",
+              "refId": "A",
+              "type": "streaming"
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": true
           }
-        ]
-      }
+        }
+      ]
+    }
